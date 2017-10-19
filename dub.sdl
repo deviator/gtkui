@@ -1,0 +1,7 @@
+name "gtkui"
+targetType "library"
+description "Aux library for writing GTK-interface program"
+authors "Oleg Butko (deviator)"
+copyright "Copyright © 2017, Oleg Butko"
+license "MIT"
+dependency "gtk-d:gtkd" version="~>3.7.0"
