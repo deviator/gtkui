@@ -28,4 +28,4 @@ class UI : MainBuilderUI
 }
 ```
 
-for more information see example
+For more information see small (100 lines with comments) [example](example/app.d) 

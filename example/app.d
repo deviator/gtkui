@@ -1,10 +1,11 @@
+// basic use of gtkui
 import std.conv : to;
 
 // import all needed gtk classes
-import gtk.Box;
+import gtk.Box; // layout container
 import gtk.Button;
 import gtk.Label;
-import gtk.Widget;
+import gtk.Widget; // base class for all widgets
 import gtk.Window;
 
 import gtkui;
@@ -21,15 +22,14 @@ void main()
 // main window (main ui class)
 class UI : MainBuilderUI
 {
+    // override method that find `@gtkwidget` fields
+    // and get instances of those fields from builder
     mixin GtkUIHelper;
 
     // widgets definition
-    @gtkwidget
-    {
-        Window mwindow;
-        Box vbox;
-        Button addbtn;
-    }
+    @gtkwidget Window mwindow;
+    @gtkwidget Box vbox;
+    @gtkwidget Button addbtn;
 
     this()
     {
@@ -39,8 +39,8 @@ class UI : MainBuilderUI
         // you can use run-time loading glade files
         super(import("main.glade"), CUSTOMCSS);
 
-        // widget automaticaly gets from builder and you can use
-        // thouse without any boilereplate code
+        // widgets automaticaly gets from builder and you
+        // can use those without any boilereplate code
         addbtn.addOnClicked((b)
         {
             // create new dynamic part of ui and add this to `vbox`
