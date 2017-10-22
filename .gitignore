@@ -1,3 +1,4 @@
 *.a
-example/*/example
+example/example
 dub.selections.json
+*.*~

@@ -45,6 +45,7 @@ interface GtkUI
         {
             import std.traits : hasUDA, getUDAs;
             import std.format : format;
+            import gobject.ObjectG;
 
             alias T = typeof(this);
 
