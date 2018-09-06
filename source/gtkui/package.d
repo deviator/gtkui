@@ -1,3 +1,4 @@
+///
 module gtkui;
 
 public import gtkui.base;
