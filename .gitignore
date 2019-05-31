@@ -1,3 +1,4 @@
+.dub
 *.a
 example/example
 dub.selections.json
