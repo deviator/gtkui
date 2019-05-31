@@ -71,6 +71,10 @@ public:
     void runLoop() { GtkMain.run(); }
 
     ///
+    bool loopStep(bool block=false)
+    { return GtkMain.iterationDo(block); }
+
+    ///
     void exitLoop() { GtkMain.quit(); }
 
     ///
