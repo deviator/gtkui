@@ -16,10 +16,13 @@ import gtkui.exception;
 abstract class BuilderUI : GtkUI
 {
     /// For `@gtksignal` UDA
-    protected struct SignalUDA { string ns; }
+    protected struct SignalUDA { string ns; bool swapped; }
     /// ditto
-    static protected auto gtksignal(string ns="") @property
-    { return SignalUDA(ns); }
+    static protected auto gtksignal(string ns="", bool swapped=false) @property
+    { return SignalUDA(ns, swapped); }
+    /// ditto
+    static protected auto gtksignal(bool swapped) @property
+    { return SignalUDA("", swapped); }
 
     mixin GtkUIHelper;
 
@@ -39,22 +42,47 @@ abstract class BuilderUI : GtkUI
 
         alias This = typeof(this);
 
+        private static string[] signatureNames(string m)()
+        {
+            import std.format : format;
+            alias F = __traits(getMember, This, m);
+            string[] ret;
+            foreach (i, p; Parameters!F)
+                ret ~= format!"p%d"(i);
+            return ret;
+        }
+
+        import std.string : join;
+        import std.traits : Parameters;
+
+        private static string getSignature(string m)()
+        {
+            import std.traits : getUDAs;
+            import std.algorithm : map;
+            import std.range : enumerate;
+            import std.format : format;
+            enum swapped = getUDAs!(__traits(getMember, This, m), SignalUDA)[0].swapped;
+            enum sNames = signatureNames!m;
+            enum params = sNames.length ?
+                sNames.enumerate.map!(a=>"Parameters!("~m~")["~a.index.to!string~"] "~a.value).join(", ")
+                : `void* obj`;
+            return swapped ? `void* user_data, `~params : params~`, void* user_data`;
+        }
+
         static foreach (m; __traits(allMembers, This))
         {
             static if (hasUDA!(__traits(getMember, This, m), SignalUDA))
             {
-                mixin(`protected static extern(C) void __g_signal_callback_`~m~
-                `(void* obj, void* user_data)
+                mixin(`protected static extern(C) void __g_signal_callback_`~m~`(`~getSignature!m~`)
                 {
                     import gtkui.exception;
                     import std.exception : enforce;
 
                     auto t = enforce(cast(This)(user_data),
-                        new GUIException("user data pointer for signal '`~m~
-                        `' is not '`~This.stringof~`'"));
-                    t.`~m~`();
+                        new GUIException("user data pointer for signal '`~m~`' is not '`~This.stringof~`'"));
+                    t.`~m~`(`~signatureNames!(m).join(", ")~`);
                 }`);
-            };
+            }
         }
 
         protected override void setUpGtkSignals()
@@ -64,13 +92,13 @@ abstract class BuilderUI : GtkUI
             static foreach (m; __traits(allMembers, This))
             {
                 static if (hasUDA!(__traits(getMember, This, m), SignalUDA))
-                {
+                {{
                     static if (!isCallable!(__traits(getMember, This, m)))
                         static assert(0, "signal can be only callable object (field '"~m~"')");
                     enum uda = getUDAs!(__traits(getMember, This, m), SignalUDA)[0];
                     enum name = (uda.ns.length ? uda.ns ~ "." : "") ~ m;
                     mixin(`builder.addCallbackSymbol(name, cast(GCallback)(&__g_signal_callback_`~m~`));`);
-                }
+                }}
             }
             builder.connectSignals(cast(void*)this);
         }

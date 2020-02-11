@@ -35,9 +35,23 @@ class UI : MainBuilderUI
     @gtkwidget Box vbox;
     @gtkwidget Button addbtn;
 
-    @gtksignal void clickAdd()
+    @gtksignal void clickAdd(GtkButton* btnptr)
     {
-        stderr.writeln("clickAdd signal");
+        new Button(btnptr).setLabel("add " ~ (panels_count+1).to!string);
+    }
+
+    @gtksignal void setFocus(GtkContainer* c, GtkWidget* e)
+    {
+        stderr.writeln("        set focus callback: ",
+                        cast(void*)vbox.getBoxStruct(), " = ",
+                        cast(void*)c, "  widget: ", cast(void*)e);
+    }
+
+    @gtksignal(true) void setFocusSwapped(GtkWidget* e, GtkContainer* c)
+    {
+        stderr.writeln("set focus swapped callback: ",
+                        cast(void*)vbox.getBoxStruct(), " = ",
+                        cast(void*)c, "  widget: ", cast(void*)e);
     }
 
     uint panels_count;
@@ -57,6 +71,7 @@ class UI : MainBuilderUI
             // create new dynamic part of ui and add this to `vbox`
             auto tmp = new Panel(panels_count++);
             vbox.packEnd(tmp.mainWidget, true, true, 12);
+            vbox.setFocusChild(tmp.mainWidget);
         });
 
         // add calling `quit()` on hide mwindow 

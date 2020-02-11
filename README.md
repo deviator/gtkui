@@ -33,11 +33,15 @@ class UI : MainBuilderUI
 }
 ```
 
-For more information see small (120 lines with comments) [example](example/app.d) 
+For more information see small (~130 lines with comments) [example](example/app.d)
 
 #### Limitations in signal usage
 
 1. Signals in glade file should not contain `User data`,
 otherwise this will crash program.
 
-2. Signal methods in builder should not receive parameters.
+2. If you want to use parameters from signal method you must be sure of
+their count and order, otherwise wrong count or order of parameters
+will crash program.
+
+3. Parameter of signal method must be gtk pointers (not wraps from gtkD).
