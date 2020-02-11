@@ -14,10 +14,15 @@ void main()
 
 class UI : MainBuilderUI
 {
-    mixin GtkUIHelper;
+    mixin GtkBuilderHelper;
 
     @gtkwidget Window mwindow;
     @gtkwidget Button addbtn;
+
+    @gtksignal void someAction()
+    {
+        /+ do something +/
+    }
 
     this()
     {
@@ -28,4 +33,11 @@ class UI : MainBuilderUI
 }
 ```
 
-For more information see small (100 lines with comments) [example](example/app.d) 
+For more information see small (120 lines with comments) [example](example/app.d) 
+
+#### Limitations in signal usage
+
+1. Signals in glade file should not contain `User data`,
+otherwise this will crash program.
+
+2. Signal methods in builder should not receive parameters.

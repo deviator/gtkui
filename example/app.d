@@ -1,5 +1,6 @@
 // basic use of gtkui
 import std.conv : to;
+import std.stdio : stderr;
 
 // import all needed gtk classes
 import gtk.Box; // layout container
@@ -22,14 +23,24 @@ void main()
 // main window (main ui class)
 class UI : MainBuilderUI
 {
-    // override method that find `@gtkwidget` fields
-    // and get instances of those fields from builder
-    mixin GtkUIHelper;
+    /+ override method that find `@gtkwidget` fields
+       and get instances of those fields from builder
+       override method that find `@gtksignal` methods
+       and connect those methods in builder
+     +/
+    mixin GtkBuilderHelper;
 
     // widgets definition
     @gtkwidget Window mwindow;
     @gtkwidget Box vbox;
     @gtkwidget Button addbtn;
+
+    @gtksignal void clickAdd()
+    {
+        stderr.writeln("clickAdd signal");
+    }
+
+    uint panels_count;
 
     this()
     {
@@ -44,7 +55,7 @@ class UI : MainBuilderUI
         addbtn.addOnClicked((b)
         {
             // create new dynamic part of ui and add this to `vbox`
-            auto tmp = new Panel;
+            auto tmp = new Panel(panels_count++);
             vbox.packEnd(tmp.mainWidget, true, true, 12);
         });
 
@@ -59,7 +70,9 @@ class UI : MainBuilderUI
 // and requires a glade file in ctor
 class Panel : ChildBuilderUI
 {
-    mixin GtkUIHelper;
+    mixin GtkBuilderHelper;
+
+    uint idx;
 
     // child parts 
     Foo!"g1" g1;
@@ -67,15 +80,22 @@ class Panel : ChildBuilderUI
 
     @gtkwidget Box panelmainbox;
 
-    this()
+    // as for widgets signals can have namespace
+    // at glade file signal should have name "panel.clickG2"
+    @gtksignal("panel") void clickG2()
     {
+        stderr.writefln("clickG2 signal (from %d)", idx);
+    }
+
+    this(uint idx)
+    {
+        this.idx = idx;
         super(import("panel.glade"));
         g1 = new typeof(g1)(this);
         g2 = new typeof(g2)(this);
     }
 
-    override Widget mainWidget() @property
-    { return panelmainbox; }
+    override Widget mainWidget() @property { return panelmainbox; }
 }
 
 // `ChildGtkUI` most simplest implementation of GtkUI and can't be used

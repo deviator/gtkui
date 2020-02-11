@@ -15,10 +15,66 @@ import gtkui.exception;
 ///
 abstract class BuilderUI : GtkUI
 {
+    /// For `@gtksignal` UDA
+    protected struct SignalUDA { string ns; }
+    /// ditto
+    static protected auto gtksignal(string ns="") @property
+    { return SignalUDA(ns); }
+
     mixin GtkUIHelper;
 
     /// parse xml ui and create elements
     protected Builder builder;
+
+    /++ Insert this mixin in all builder classes where need use signals
+        contains:
+            implementation of `void setUpGtkSignals()`
+            static extern(C) callback's for signals
+     +/
+    mixin template GtkBuilderHelper()
+    {
+        mixin GtkUIHelper;
+
+        import std.traits : hasUDA;
+
+        alias This = typeof(this);
+
+        static foreach (m; __traits(allMembers, This))
+        {
+            static if (hasUDA!(__traits(getMember, This, m), SignalUDA))
+            {
+                mixin(`protected static extern(C) void __g_signal_callback_`~m~
+                `(void* obj, void* user_data)
+                {
+                    import gtkui.exception;
+                    import std.exception : enforce;
+
+                    auto t = enforce(cast(This)(user_data),
+                        new GUIException("user data pointer for signal '`~m~
+                        `' is not '`~This.stringof~`'"));
+                    t.`~m~`();
+                }`);
+            };
+        }
+
+        protected override void setUpGtkSignals()
+        {
+            import std.traits : getUDAs, isCallable;
+
+            static foreach (m; __traits(allMembers, This))
+            {
+                static if (hasUDA!(__traits(getMember, This, m), SignalUDA))
+                {
+                    static if (!isCallable!(__traits(getMember, This, m)))
+                        static assert(0, "signal can be only callable object (field '"~m~"')");
+                    enum uda = getUDAs!(__traits(getMember, This, m), SignalUDA)[0];
+                    enum name = (uda.ns.length ? uda.ns ~ "." : "") ~ m;
+                    mixin(`builder.addCallbackSymbol(name, cast(GCallback)(&__g_signal_callback_`~m~`));`);
+                }
+            }
+            builder.connectSignals(cast(void*)this);
+        }
+    }
 
     ///
     this(string xml)
@@ -26,7 +82,11 @@ abstract class BuilderUI : GtkUI
         builder = new Builder;
         enforce(builder.addFromString(xml), new GUIException("cannot create ui"));
         setUpGtkWidgetFields();
+        setUpGtkSignals();
     }
+
+    ///
+    protected void setUpGtkSignals() {}
 
     /// Use builder for getting objects
     override ObjectG getObject(string name) { return builder.getObject(name); }
@@ -35,8 +95,6 @@ abstract class BuilderUI : GtkUI
 /// Class for main UI controller
 class MainBuilderUI : BuilderUI
 {
-    mixin GtkUIHelper;
-
     import glib.Idle;
     static import gtk.Main;
     alias GtkMain = gtk.Main.Main;
@@ -132,8 +190,6 @@ public:
 /// For child UI controllers
 class ChildBuilderUI : BuilderUI
 {
-    mixin GtkUIHelper;
-
     ///
     this(string xml) { super(xml); }
 

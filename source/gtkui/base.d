@@ -10,7 +10,7 @@ interface GtkUI
 {
     /// For `@gtkwidget` UDA
     protected struct WidgetUDA { string ns; }
-    /// For `@gtkwidget` UDA
+    /// ditto
     static protected auto gtkwidget(string ns="") @property
     { return WidgetUDA(ns); }
 
@@ -37,7 +37,7 @@ interface GtkUI
 
     /++ Insert this mixin in all child classes where used `@gtkwidget`
         contains:
-            realization of `void setUpGtkWidgetFields()`
+            implementation of `void setUpGtkWidgetFields()`
      +/
     mixin template GtkUIHelper()
     {
