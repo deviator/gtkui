@@ -47,4 +47,5 @@ will crash program.
 3. Parameter of signal method must be gtk pointers (not wraps from gtkD).
 
 4. If you want don't use parameters for signal method be sure what this signal
-receive only one parameter, otherwise you should specify parameters.
+receive only two parameters (gtk widget and user data),
+otherwise you should specify parameters.
